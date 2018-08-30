@@ -31,7 +31,7 @@ provider:
   # rename env.example to env.yml and uncomment
   # the following line. Also, make sure to not
   # commit your env.yml.
-  environment: ${file(env.yml):${self:provider.stage}}
+  environment: #${file(env.yml):${self:provider.stage}}
     tableName:
           Ref: OrdersTable
   # 'iamRoleStatements' defines the permission policy for the Lambda function.

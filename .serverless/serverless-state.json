@@ -10,6 +10,11 @@
       "variableSyntax": "\\${([ ~:a-zA-Z0-9._'\",\\-\\/\\(\\)]+?)}",
       "name": "aws",
       "runtime": "nodejs8.10",
+      "environment": {
+        "tableName": {
+          "Ref": "OrdersTable"
+        }
+      },
       "iamRoleStatements": [
         {
           "Effect": "Allow",
@@ -22,7 +27,14 @@
             "dynamodb:UpdateItem",
             "dynamodb:DeleteItem"
           ],
-          "Resource": "arn:aws:dynamodb:us-west-2:*:*"
+          "Resource": [
+            {
+              "Fn::GetAtt": [
+                "OrdersTable",
+                "Arn"
+              ]
+            }
+          ]
         }
       ],
       "versionFunctions": true,
@@ -124,7 +136,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/cave-painter-api/dev/1535155880429-2018-08-25T00:11:20.429Z/cave-painter-api.zip"
+                "S3Key": "serverless/cave-painter-api/dev/1535603846736-2018-08-30T04:37:26.736Z/cave-painter-api.zip"
               },
               "FunctionName": "cave-painter-api-dev-create",
               "Handler": "create.main",
@@ -136,21 +148,28 @@
                 ]
               },
               "Runtime": "nodejs8.10",
-              "Timeout": 6
+              "Timeout": 6,
+              "Environment": {
+                "Variables": {
+                  "tableName": {
+                    "Ref": "OrdersTable"
+                  }
+                }
+              }
             },
             "DependsOn": [
               "CreateLogGroup",
               "IamRoleLambdaExecution"
             ]
           },
-          "CreateLambdaVersionlBSTXh12JADxfCdgWV8d6S5K5686ePw539rFHJsd40": {
+          "CreateLambdaVersionYS7Bpab4AMEdDeO8aaX8JqIVAezbfUU0KDlGVQVmsos": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "CreateLambdaFunction"
               },
-              "CodeSha256": "QlsAT27qn0K+Fikpe/z8K4CBxCL9Coldz4p4BQ9LEG4="
+              "CodeSha256": "4T9s364luRAVUn2pXYeNrnMLJO6qxZ1Mglarvzjb73o="
             }
           },
           "ApiGatewayRestApi": {
@@ -269,7 +288,7 @@
               "MethodResponses": []
             }
           },
-          "ApiGatewayDeployment1535155880448": {
+          "ApiGatewayDeployment1535603846757": {
             "Type": "AWS::ApiGateway::Deployment",
             "Properties": {
               "RestApiId": {
@@ -327,6 +346,213 @@
                 ]
               }
             }
+          },
+          "OrdersTable": {
+            "Type": "AWS::DynamoDB::Table",
+            "Properties": {
+              "TableName": "dev-orders",
+              "AttributeDefinitions": [
+                {
+                  "AttributeName": "id",
+                  "AttributeType": "S"
+                }
+              ],
+              "KeySchema": [
+                {
+                  "AttributeName": "id",
+                  "KeyType": "HASH"
+                }
+              ],
+              "ProvisionedThroughput": {
+                "ReadCapacityUnits": 1,
+                "WriteCapacityUnits": 1
+              }
+            }
+          },
+          "AttachmentsBucket": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+              "CorsConfiguration": {
+                "CorsRules": [
+                  {
+                    "AllowedOrigins": [
+                      "*"
+                    ],
+                    "AllowedHeaders": [
+                      "*"
+                    ],
+                    "AllowedMethods": [
+                      "GET",
+                      "PUT",
+                      "POST",
+                      "DELETE",
+                      "HEAD"
+                    ],
+                    "MaxAge": 3000
+                  }
+                ]
+              }
+            }
+          },
+          "CognitoUserPool": {
+            "Type": "AWS::Cognito::UserPool",
+            "Properties": {
+              "UserPoolName": "dev-user-pool",
+              "UsernameAttributes": [
+                "email"
+              ],
+              "AutoVerifiedAttributes": [
+                "email"
+              ]
+            }
+          },
+          "CognitoUserPoolClient": {
+            "Type": "AWS::Cognito::UserPoolClient",
+            "Properties": {
+              "ClientName": "dev-user-pool-client",
+              "UserPoolId": {
+                "Ref": "CognitoUserPool"
+              },
+              "ExplicitAuthFlows": [
+                "ADMIN_NO_SRP_AUTH"
+              ],
+              "GenerateSecret": false
+            }
+          },
+          "CognitoIdentityPool": {
+            "Type": "AWS::Cognito::IdentityPool",
+            "Properties": {
+              "IdentityPoolName": "devIdentityPool",
+              "AllowUnauthenticatedIdentities": false,
+              "CognitoIdentityProviders": [
+                {
+                  "ClientId": {
+                    "Ref": "CognitoUserPoolClient"
+                  },
+                  "ProviderName": {
+                    "Fn::GetAtt": [
+                      "CognitoUserPool",
+                      "ProviderName"
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "CognitoIdentityPoolRoles": {
+            "Type": "AWS::Cognito::IdentityPoolRoleAttachment",
+            "Properties": {
+              "IdentityPoolId": {
+                "Ref": "CognitoIdentityPool"
+              },
+              "Roles": {
+                "authenticated": {
+                  "Fn::GetAtt": [
+                    "CognitoAuthRole",
+                    "Arn"
+                  ]
+                }
+              }
+            }
+          },
+          "CognitoAuthRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+              "Path": "/",
+              "AssumeRolePolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Principal": {
+                      "Federated": "cognito-identity.amazonaws.com"
+                    },
+                    "Action": [
+                      "sts:AssumeRoleWithWebIdentity"
+                    ],
+                    "Condition": {
+                      "StringEquals": {
+                        "cognito-identity.amazonaws.com:aud": {
+                          "Ref": "CognitoIdentityPool"
+                        }
+                      },
+                      "ForAnyValue:StringLike": {
+                        "cognito-identity.amazonaws.com:amr": "authenticated"
+                      }
+                    }
+                  }
+                ]
+              },
+              "Policies": [
+                {
+                  "PolicyName": "CognitoAuthorizedPolicy",
+                  "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "mobileanalytics:PutEvents",
+                          "cognito-sync:*",
+                          "cognito-identity:*"
+                        ],
+                        "Resource": "*"
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "execute-api:Invoke"
+                        ],
+                        "Resource": {
+                          "Fn::Join": [
+                            "",
+                            [
+                              "arn:aws:execute-api:",
+                              {
+                                "Ref": "AWS::Region"
+                              },
+                              ":",
+                              {
+                                "Ref": "AWS::AccountId"
+                              },
+                              ":",
+                              {
+                                "Ref": "ApiGatewayRestApi"
+                              },
+                              "/*"
+                            ]
+                          ]
+                        }
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "s3:*"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::Join": [
+                              "",
+                              [
+                                {
+                                  "Fn::GetAtt": [
+                                    "AttachmentsBucket",
+                                    "Arn"
+                                  ]
+                                },
+                                "/private/",
+                                "$",
+                                "{cognito-identity.amazonaws.com:sub}/*"
+                              ]
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
           }
         },
         "Outputs": {
@@ -338,7 +564,7 @@
           "CreateLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "CreateLambdaVersionlBSTXh12JADxfCdgWV8d6S5K5686ePw539rFHJsd40"
+              "Ref": "CreateLambdaVersionYS7Bpab4AMEdDeO8aaX8JqIVAezbfUU0KDlGVQVmsos"
             }
           },
           "ServiceEndpoint": {
@@ -358,6 +584,26 @@
                   "/dev"
                 ]
               ]
+            }
+          },
+          "AttachmentsBucketName": {
+            "Value": {
+              "Ref": "AttachmentsBucket"
+            }
+          },
+          "UserPoolId": {
+            "Value": {
+              "Ref": "CognitoUserPool"
+            }
+          },
+          "UserPoolClientId": {
+            "Value": {
+              "Ref": "CognitoUserPoolClient"
+            }
+          },
+          "IdentityPoolId": {
+            "Value": {
+              "Ref": "CognitoIdentityPool"
             }
           }
         }
@@ -381,6 +627,12 @@
       "vpc": {}
     },
     "custom": {
+      "stage": "dev",
+      "tableThroughputs": {
+        "prod": 5,
+        "default": 1
+      },
+      "tableThroughput": 1,
       "webpack": {
         "webpackConfig": "./webpack.config.js",
         "includeModules": true
@@ -435,10 +687,243 @@
         "runtime": "nodejs8.10",
         "vpc": {}
       }
+    },
+    "resources": {
+      "Resources": {
+        "OrdersTable": {
+          "Type": "AWS::DynamoDB::Table",
+          "Properties": {
+            "TableName": "dev-orders",
+            "AttributeDefinitions": [
+              {
+                "AttributeName": "id",
+                "AttributeType": "S"
+              }
+            ],
+            "KeySchema": [
+              {
+                "AttributeName": "id",
+                "KeyType": "HASH"
+              }
+            ],
+            "ProvisionedThroughput": {
+              "ReadCapacityUnits": 1,
+              "WriteCapacityUnits": 1
+            }
+          }
+        },
+        "AttachmentsBucket": {
+          "Type": "AWS::S3::Bucket",
+          "Properties": {
+            "CorsConfiguration": {
+              "CorsRules": [
+                {
+                  "AllowedOrigins": [
+                    "*"
+                  ],
+                  "AllowedHeaders": [
+                    "*"
+                  ],
+                  "AllowedMethods": [
+                    "GET",
+                    "PUT",
+                    "POST",
+                    "DELETE",
+                    "HEAD"
+                  ],
+                  "MaxAge": 3000
+                }
+              ]
+            }
+          }
+        },
+        "CognitoUserPool": {
+          "Type": "AWS::Cognito::UserPool",
+          "Properties": {
+            "UserPoolName": "dev-user-pool",
+            "UsernameAttributes": [
+              "email"
+            ],
+            "AutoVerifiedAttributes": [
+              "email"
+            ]
+          }
+        },
+        "CognitoUserPoolClient": {
+          "Type": "AWS::Cognito::UserPoolClient",
+          "Properties": {
+            "ClientName": "dev-user-pool-client",
+            "UserPoolId": {
+              "Ref": "CognitoUserPool"
+            },
+            "ExplicitAuthFlows": [
+              "ADMIN_NO_SRP_AUTH"
+            ],
+            "GenerateSecret": false
+          }
+        },
+        "CognitoIdentityPool": {
+          "Type": "AWS::Cognito::IdentityPool",
+          "Properties": {
+            "IdentityPoolName": "devIdentityPool",
+            "AllowUnauthenticatedIdentities": false,
+            "CognitoIdentityProviders": [
+              {
+                "ClientId": {
+                  "Ref": "CognitoUserPoolClient"
+                },
+                "ProviderName": {
+                  "Fn::GetAtt": [
+                    "CognitoUserPool",
+                    "ProviderName"
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        "CognitoIdentityPoolRoles": {
+          "Type": "AWS::Cognito::IdentityPoolRoleAttachment",
+          "Properties": {
+            "IdentityPoolId": {
+              "Ref": "CognitoIdentityPool"
+            },
+            "Roles": {
+              "authenticated": {
+                "Fn::GetAtt": [
+                  "CognitoAuthRole",
+                  "Arn"
+                ]
+              }
+            }
+          }
+        },
+        "CognitoAuthRole": {
+          "Type": "AWS::IAM::Role",
+          "Properties": {
+            "Path": "/",
+            "AssumeRolePolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Principal": {
+                    "Federated": "cognito-identity.amazonaws.com"
+                  },
+                  "Action": [
+                    "sts:AssumeRoleWithWebIdentity"
+                  ],
+                  "Condition": {
+                    "StringEquals": {
+                      "cognito-identity.amazonaws.com:aud": {
+                        "Ref": "CognitoIdentityPool"
+                      }
+                    },
+                    "ForAnyValue:StringLike": {
+                      "cognito-identity.amazonaws.com:amr": "authenticated"
+                    }
+                  }
+                }
+              ]
+            },
+            "Policies": [
+              {
+                "PolicyName": "CognitoAuthorizedPolicy",
+                "PolicyDocument": {
+                  "Version": "2012-10-17",
+                  "Statement": [
+                    {
+                      "Effect": "Allow",
+                      "Action": [
+                        "mobileanalytics:PutEvents",
+                        "cognito-sync:*",
+                        "cognito-identity:*"
+                      ],
+                      "Resource": "*"
+                    },
+                    {
+                      "Effect": "Allow",
+                      "Action": [
+                        "execute-api:Invoke"
+                      ],
+                      "Resource": {
+                        "Fn::Join": [
+                          "",
+                          [
+                            "arn:aws:execute-api:",
+                            {
+                              "Ref": "AWS::Region"
+                            },
+                            ":",
+                            {
+                              "Ref": "AWS::AccountId"
+                            },
+                            ":",
+                            {
+                              "Ref": "ApiGatewayRestApi"
+                            },
+                            "/*"
+                          ]
+                        ]
+                      }
+                    },
+                    {
+                      "Effect": "Allow",
+                      "Action": [
+                        "s3:*"
+                      ],
+                      "Resource": [
+                        {
+                          "Fn::Join": [
+                            "",
+                            [
+                              {
+                                "Fn::GetAtt": [
+                                  "AttachmentsBucket",
+                                  "Arn"
+                                ]
+                              },
+                              "/private/",
+                              "$",
+                              "{cognito-identity.amazonaws.com:sub}/*"
+                            ]
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      },
+      "Outputs": {
+        "AttachmentsBucketName": {
+          "Value": {
+            "Ref": "AttachmentsBucket"
+          }
+        },
+        "UserPoolId": {
+          "Value": {
+            "Ref": "CognitoUserPool"
+          }
+        },
+        "UserPoolClientId": {
+          "Value": {
+            "Ref": "CognitoUserPoolClient"
+          }
+        },
+        "IdentityPoolId": {
+          "Value": {
+            "Ref": "CognitoIdentityPool"
+          }
+        }
+      }
     }
   },
   "package": {
-    "artifactDirectoryName": "serverless/cave-painter-api/dev/1535155880429-2018-08-25T00:11:20.429Z",
+    "artifactDirectoryName": "serverless/cave-painter-api/dev/1535603846736-2018-08-30T04:37:26.736Z",
     "artifact": ""
   }
 }
