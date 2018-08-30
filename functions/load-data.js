@@ -1,8 +1,5 @@
 import uuid from "uuid";
-import AWS from "aws-sdk";
-
-AWS.config.update({ region: "us-west-2" });
-const dynamoDb = new AWS.DynamoDB.DocumentClient();
+import * as postgresLib from "./libs/postgres";
 
 export function main(event, context, callback) {
   // Request body is passed in as a JSON encoded string in 'event.body'
@@ -57,11 +54,8 @@ export function main(event, context, callback) {
       paymentMethod,
       paymentReference,
 
-      
+
       userId: event.requestContext.identity.cognitoIdentityId,
-      noteId: uuid.v1(),
-      content: data.content,
-      attachment: data.attachment,
       createdAt: Date.now()
     }
   };
