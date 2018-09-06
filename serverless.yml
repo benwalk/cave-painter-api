@@ -31,9 +31,8 @@ provider:
   # rename env.example to env.yml and uncomment
   # the following line. Also, make sure to not
   # commit your env.yml.
-  environment: #${file(env.yml):${self:provider.stage}}
-    tableName:
-          Ref: OrdersTable
+  environment: ${file(env.yml):${self:provider.stage}}
+
   # 'iamRoleStatements' defines the permission policy for the Lambda function.
   # In this case Lambda functions are granted with permissions to access DynamoDB.
   iamRoleStatements:
@@ -48,27 +47,41 @@ provider:
         - dynamodb:DeleteItem
       Resource:
         - "Fn::GetAtt": [ OrdersTable, Arn ]
+        - "Fn::GetAtt": [ CoffeesTable, Arn ]
 
 functions:
-  # Defines an HTTP API endpoint that calls the main function in create.js
-  # - path: url path is /notes
+  # Defines an HTTP API endpoint that calls the main function in create-coffee.js
+  # - path: url path is /coffees
   # - method: POST request
   # - cors: enabled CORS (Cross-Origin Resource Sharing) for browser cross
   #     domain api call
   # - authorizer: authenticate using the AWS IAM role
-  create:
-    handler: create.main
+  createCoffee:
+    handler: functions/coffee/create.main
     events:
       - http:
-          path: notes
+          path: coffees
           method: post
+          cors: true
+          authorizer: aws_iam
+
+  # Defines an HTTP API endpoint that calls the main function in list-coffees.js
+  # - path: url path is /coffees
+  # - method: GET request
+  listCoffees:
+    handler: functions/coffee/list-all.main
+    events:
+      - http:
+          path: coffees
+          method: get
           cors: true
           authorizer: aws_iam
 
           # Create our resources with separate CloudFormation templates
 resources:
   # DynamoDB
-  - ${file(resources/dynamodb-table.yml)}
+  - ${file(resources/dynamodb-table-orders.yml)}
+  - ${file(resources/dynamodb-table-coffees.yml)}
   # S3
   - ${file(resources/s3-bucket.yml)}
   # Cognito

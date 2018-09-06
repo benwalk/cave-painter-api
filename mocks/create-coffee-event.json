@@ -1,0 +1,8 @@
+{
+  "body": "{\"name\":\"Guatemala\",\"description\":\"nutty,dark,chocolately\",\"attachment\":\"guatemala.jpg\"}",
+  "requestContext": {
+    "identity": {
+      "cognitoIdentityId": "USER-SUB-1234"
+    }
+  }
+}
