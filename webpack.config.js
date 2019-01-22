@@ -34,7 +34,8 @@ module.exports = {
     modules: [
       path.resolve('./client'),
       path.resolve('./node_modules'),
-      path.resolve('./libs')
+      path.resolve('./libs'),
+      path.resolve('./graphql')
     ]
   }
 };

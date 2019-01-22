@@ -5,10 +5,16 @@
     "ServerlessDeploymentBucket": {
       "Type": "AWS::S3::Bucket"
     },
-    "CreateLogGroup": {
+    "GraphqlLogGroup": {
       "Type": "AWS::Logs::LogGroup",
       "Properties": {
-        "LogGroupName": "/aws/lambda/cave-painter-api-dev-create"
+        "LogGroupName": "/aws/lambda/cave-painter-api-dev-graphql"
+      }
+    },
+    "PlaygroundLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/cave-painter-api-dev-playground"
       }
     },
     "IamRoleLambdaExecution": {
@@ -52,7 +58,10 @@
                   ],
                   "Resource": [
                     {
-                      "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/cave-painter-api-dev-create:*"
+                      "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/cave-painter-api-dev-graphql:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/cave-painter-api-dev-playground:*"
                     }
                   ]
                 },
@@ -63,7 +72,10 @@
                   ],
                   "Resource": [
                     {
-                      "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/cave-painter-api-dev-create:*:*"
+                      "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/cave-painter-api-dev-graphql:*:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/cave-painter-api-dev-playground:*:*"
                     }
                   ]
                 },
@@ -105,17 +117,17 @@
         }
       }
     },
-    "CreateLambdaFunction": {
+    "GraphqlLambdaFunction": {
       "Type": "AWS::Lambda::Function",
       "Properties": {
         "Code": {
           "S3Bucket": {
             "Ref": "ServerlessDeploymentBucket"
           },
-          "S3Key": "serverless/cave-painter-api/dev/1535603846736-2018-08-30T04:37:26.736Z/cave-painter-api.zip"
+          "S3Key": "serverless/cave-painter-api/dev/1548119192038-2019-01-22T01:06:32.038Z/cave-painter-api.zip"
         },
-        "FunctionName": "cave-painter-api-dev-create",
-        "Handler": "create.main",
+        "FunctionName": "cave-painter-api-dev-graphql",
+        "Handler": "graphql/handler.graphqlHandler",
         "MemorySize": 1024,
         "Role": {
           "Fn::GetAtt": [
@@ -127,25 +139,64 @@
         "Timeout": 6,
         "Environment": {
           "Variables": {
-            "tableName": {
-              "Ref": "OrdersTable"
-            }
+            "tableName": "dev-orders"
           }
         }
       },
       "DependsOn": [
-        "CreateLogGroup",
+        "GraphqlLogGroup",
         "IamRoleLambdaExecution"
       ]
     },
-    "CreateLambdaVersionYS7Bpab4AMEdDeO8aaX8JqIVAezbfUU0KDlGVQVmsos": {
+    "GraphqlLambdaVersionRrTeIv6HuQvIGCaNMepNMKINCXRwjLDrCsRFgYh2LU": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
-          "Ref": "CreateLambdaFunction"
+          "Ref": "GraphqlLambdaFunction"
         },
-        "CodeSha256": "4T9s364luRAVUn2pXYeNrnMLJO6qxZ1Mglarvzjb73o="
+        "CodeSha256": "Rd87h7TQIFouPRTEyvC4FWWmHOPWLfpRtP/U6r6M4Qs="
+      }
+    },
+    "PlaygroundLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/cave-painter-api/dev/1548119192038-2019-01-22T01:06:32.038Z/cave-painter-api.zip"
+        },
+        "FunctionName": "cave-painter-api-dev-playground",
+        "Handler": "graphql/handler.playgroundHandler",
+        "MemorySize": 1024,
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        },
+        "Runtime": "nodejs8.10",
+        "Timeout": 6,
+        "Environment": {
+          "Variables": {
+            "tableName": "dev-orders"
+          }
+        }
+      },
+      "DependsOn": [
+        "PlaygroundLogGroup",
+        "IamRoleLambdaExecution"
+      ]
+    },
+    "PlaygroundLambdaVersion5PRmolVg3Li2nBGeVzZyCmhhXGbud9jQ6VM99Sy3N4": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "PlaygroundLambdaFunction"
+        },
+        "CodeSha256": "Rd87h7TQIFouPRTEyvC4FWWmHOPWLfpRtP/U6r6M4Qs="
       }
     },
     "ApiGatewayRestApi": {
@@ -159,7 +210,7 @@
         }
       }
     },
-    "ApiGatewayResourceNotes": {
+    "ApiGatewayResourceGraphql": {
       "Type": "AWS::ApiGateway::Resource",
       "Properties": {
         "ParentId": {
@@ -168,13 +219,28 @@
             "RootResourceId"
           ]
         },
-        "PathPart": "notes",
+        "PathPart": "graphql",
         "RestApiId": {
           "Ref": "ApiGatewayRestApi"
         }
       }
     },
-    "ApiGatewayMethodNotesOptions": {
+    "ApiGatewayResourcePlayground": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "ApiGatewayRestApi",
+            "RootResourceId"
+          ]
+        },
+        "PathPart": "playground",
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        }
+      }
+    },
+    "ApiGatewayMethodGraphqlOptions": {
       "Type": "AWS::ApiGateway::Method",
       "Properties": {
         "AuthorizationType": "NONE",
@@ -214,26 +280,73 @@
           ]
         },
         "ResourceId": {
-          "Ref": "ApiGatewayResourceNotes"
+          "Ref": "ApiGatewayResourceGraphql"
         },
         "RestApiId": {
           "Ref": "ApiGatewayRestApi"
         }
       }
     },
-    "ApiGatewayMethodNotesPost": {
+    "ApiGatewayMethodPlaygroundOptions": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "AuthorizationType": "NONE",
+        "HttpMethod": "OPTIONS",
+        "MethodResponses": [
+          {
+            "StatusCode": "200",
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true,
+              "method.response.header.Access-Control-Allow-Credentials": true
+            },
+            "ResponseModels": {}
+          }
+        ],
+        "RequestParameters": {},
+        "Integration": {
+          "Type": "MOCK",
+          "RequestTemplates": {
+            "application/json": "{statusCode:200}"
+          },
+          "ContentHandling": "CONVERT_TO_TEXT",
+          "IntegrationResponses": [
+            {
+              "StatusCode": "200",
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Origin": "'*'",
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'",
+                "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET'",
+                "method.response.header.Access-Control-Allow-Credentials": "'false'"
+              },
+              "ResponseTemplates": {
+                "application/json": ""
+              }
+            }
+          ]
+        },
+        "ResourceId": {
+          "Ref": "ApiGatewayResourcePlayground"
+        },
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        }
+      }
+    },
+    "ApiGatewayMethodGraphqlPost": {
       "Type": "AWS::ApiGateway::Method",
       "Properties": {
         "HttpMethod": "POST",
         "RequestParameters": {},
         "ResourceId": {
-          "Ref": "ApiGatewayResourceNotes"
+          "Ref": "ApiGatewayResourceGraphql"
         },
         "RestApiId": {
           "Ref": "ApiGatewayRestApi"
         },
         "ApiKeyRequired": false,
-        "AuthorizationType": "AWS_IAM",
+        "AuthorizationType": "NONE",
         "Integration": {
           "IntegrationHttpMethod": "POST",
           "Type": "AWS_PROXY",
@@ -252,7 +365,7 @@
                 ":lambda:path/2015-03-31/functions/",
                 {
                   "Fn::GetAtt": [
-                    "CreateLambdaFunction",
+                    "GraphqlLambdaFunction",
                     "Arn"
                   ]
                 },
@@ -264,7 +377,50 @@
         "MethodResponses": []
       }
     },
-    "ApiGatewayDeployment1535603846757": {
+    "ApiGatewayMethodPlaygroundGet": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "HttpMethod": "GET",
+        "RequestParameters": {},
+        "ResourceId": {
+          "Ref": "ApiGatewayResourcePlayground"
+        },
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        },
+        "ApiKeyRequired": false,
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":apigateway:",
+                {
+                  "Ref": "AWS::Region"
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "PlaygroundLambdaFunction",
+                    "Arn"
+                  ]
+                },
+                "/invocations"
+              ]
+            ]
+          }
+        },
+        "MethodResponses": []
+      }
+    },
+    "ApiGatewayDeployment1548119192236": {
       "Type": "AWS::ApiGateway::Deployment",
       "Properties": {
         "RestApiId": {
@@ -273,15 +429,65 @@
         "StageName": "dev"
       },
       "DependsOn": [
-        "ApiGatewayMethodNotesPost"
+        "ApiGatewayMethodGraphqlOptions",
+        "ApiGatewayMethodPlaygroundOptions",
+        "ApiGatewayMethodGraphqlPost",
+        "ApiGatewayMethodPlaygroundGet"
       ]
     },
-    "CreateLambdaPermissionApiGateway": {
+    "GraphqlLambdaPermissionApiGateway": {
       "Type": "AWS::Lambda::Permission",
       "Properties": {
         "FunctionName": {
           "Fn::GetAtt": [
-            "CreateLambdaFunction",
+            "GraphqlLambdaFunction",
+            "Arn"
+          ]
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": {
+          "Fn::Join": [
+            "",
+            [
+              "apigateway.",
+              {
+                "Ref": "AWS::URLSuffix"
+              }
+            ]
+          ]
+        },
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition"
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId"
+              },
+              ":",
+              {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "/*/*"
+            ]
+          ]
+        }
+      }
+    },
+    "PlaygroundLambdaPermissionApiGateway": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "PlaygroundLambdaFunction",
             "Arn"
           ]
         },
@@ -330,6 +536,182 @@
         "AttributeDefinitions": [
           {
             "AttributeName": "id",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "financialStatus",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "paidAt",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "fulfillmentStatus",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "fulfilledAt",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "currency",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "subtotal",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "shippingCost",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "taxes",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "amount",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "refunded",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "total",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "discountCode",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "discountAmount",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "shippingMethod",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "createdAt",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "cancelledAt",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "privateNotes",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "paymentMethod",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "paymentReference",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "lineItemQuantity",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "lineItemName",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "lineItemPrice",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "lineItemSku",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "lineItemVariant",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "lineItemRequiresShipping",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "lineItemTaxable",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "lineItemFulfillmentStatus",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "email",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "billingName",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "billingAddress1",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "billingAddress2",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "billingCity",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "billingZip",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "billingProvince",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "billingCountry",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "billingPhone",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "shippingName",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "shippingAddress1",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "shippingAddress2",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "shippingCity",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "shippingZip",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "shippingProvince",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "shippingCountry",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "shippingPhone",
             "AttributeType": "S"
           }
         ],
@@ -537,10 +919,16 @@
         "Ref": "ServerlessDeploymentBucket"
       }
     },
-    "CreateLambdaFunctionQualifiedArn": {
+    "GraphqlLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "CreateLambdaVersionYS7Bpab4AMEdDeO8aaX8JqIVAezbfUU0KDlGVQVmsos"
+        "Ref": "GraphqlLambdaVersionRrTeIv6HuQvIGCaNMepNMKINCXRwjLDrCsRFgYh2LU"
+      }
+    },
+    "PlaygroundLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "PlaygroundLambdaVersion5PRmolVg3Li2nBGeVzZyCmhhXGbud9jQ6VM99Sy3N4"
       }
     },
     "ServiceEndpoint": {
