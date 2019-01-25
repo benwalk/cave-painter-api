@@ -1,6 +1,6 @@
 const { gql }  = require('apollo-server-lambda');
 
-const typeDefs = gql`
+const schema = gql`
 type Query {
   listOrders: [Order]!
   listCustomers: [Customer]!
@@ -62,4 +62,4 @@ type Discount {
   amount: Float
 }
 `
-module.exports = {typeDefs}
+module.exports = { schema }

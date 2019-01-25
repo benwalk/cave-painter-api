@@ -1,11 +1,19 @@
-import { ApolloServer } from 'apollo-server-lambda';
-import lambdaPlayground from 'graphql-playground-middleware-lambda';
-import { typeDefs } from './schema';
-import { resolvers } from './resolvers';
+const { ApolloServer } = require('apollo-server-lambda');
+const lambdaPlayground = require('graphql-playground-middleware-lambda');
+const { schema } = require('./schema');
+const { resolvers } = require('./resolvers');
 
 const server = new ApolloServer({
-  typeDefs,
+  typeDefs: schema,
   resolvers,
+  formatError: error => {
+    console.log(error);
+    return error;
+  },
+  formatResponse: response => {
+    console.log(response);
+    return response;
+  },
   context: ({ event, context }) => ({
     headers: event.headers,
     functionName: context.functionName,
@@ -18,22 +26,19 @@ const server = new ApolloServer({
     settings: {
       'editor.theme': 'light'
     }
-  }
+  },
+  tracing: true
 })
 
 exports.graphqlHandler = server.createHandler({
   cors: {
-    origin: true,
+    origin: '*',
     credentials: true,
   }
 });
 
-exports.playgroundHandler = lambdaPlayground({
-	endpoint: '/dev/graphql'
-})
+// exports.playgroundHandler = lambdaPlayground({
+// 	endpoint: '/dev/playground'
+// })
 
-server.listen().then(({ url }) => {
-  console.log(`🚀 Server ready at ${url}`)
-});
-
-exports.server = server
+// exports.server = server
