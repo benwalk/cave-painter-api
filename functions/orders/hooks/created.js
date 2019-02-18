@@ -2,17 +2,23 @@ import * as dynamoDbLib from "../../../libs/dynamodb";
 import { success, failure } from "../../../libs/response";
 
 // export async function main(event, context) {
-export async function hook(event, context) {
+export async function hook(request, context) {
   console.log("hooked");
-  const data = JSON.parse(event.body);
-  console.log("parsed");
-  console.log(data);
+  // console.log(event);
+  const event_json = JSON.parse(request.body);
+  const order = event_json.data.object;
+  console.log(order);
+
   const params = {
     TableName: process.env.tableName,
     Item: {
-      // userId: event.requestContext.identity.cognitoIdentityId,
-      id: data.id,
-      createdAt: data.created
+      id: order.id,
+      created: order.created,
+      amount: order.amount,
+      customer: order.customer,
+      email: order.email,
+      items: order.items,
+      shipping: order.shipping
     }
   };
 
