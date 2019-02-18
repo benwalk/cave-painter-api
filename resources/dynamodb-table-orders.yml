@@ -12,5 +12,11 @@ Resources:
           KeyType: HASH
       # Set the capacity based on the stage
       ProvisionedThroughput:
-        ReadCapacityUnits: ${self:custom.tableThroughput}
-        WriteCapacityUnits: ${self:custom.tableThroughput}
+        ReadCapacityUnits: ${self:provider.dynamodb.throughput}
+        WriteCapacityUnits: ${self:provider.dynamodb.throughput}
+
+# Print out the name of the table that is created
+Outputs:
+  OrdersTableName:
+    Value:
+      Ref: OrdersTable

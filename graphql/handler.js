@@ -1,7 +1,7 @@
-const { ApolloServer } = require('apollo-server-lambda');
-const lambdaPlayground = require('graphql-playground-middleware-lambda');
-const { schema } = require('./schema');
-const { resolvers } = require('./resolvers');
+const { ApolloServer } = require("apollo-server-lambda");
+const lambdaPlayground = require("graphql-playground-middleware-lambda");
+const { schema } = require("./schema");
+const { resolvers } = require("./resolvers");
 
 const server = new ApolloServer({
   typeDefs: schema,
@@ -24,16 +24,16 @@ const server = new ApolloServer({
   // mocks: true,
   playground: {
     settings: {
-      'editor.theme': 'light'
+      "editor.theme": "light"
     }
   },
   tracing: true
-})
+});
 
 exports.graphqlHandler = server.createHandler({
   cors: {
-    origin: '*',
-    credentials: true,
+    origin: "*",
+    credentials: true
   }
 });
 
